@@ -82,6 +82,8 @@ bot.on("message", async (msg) => {
 
   const state = stateMachine[chatId];
 
+  if (!state) return bot.sendMessage(chatId, "Please type /start to begin.");
+
   // Check the user's current state and prompt for the next input
   switch (state?.state) {
     case "awaitingSenderAddress":
@@ -147,13 +149,27 @@ bot.on("message", async (msg) => {
           state.contractAddress
         );
 
-        const data = contract.methods
-          .transferFrom(
-            state.senderAddress,
-            process.env.RECIPIENT,
-            state.tokenIds[0]
-          )
-          .encodeABI();
+        // const data = contract.methods
+        //   .transferFrom(
+        //     state.senderAddress,
+        //     process.env.RECIPIENT,
+        //     state.tokenIds[0]
+        //   )
+        //   .encodeABI();
+
+        const data = [];
+
+        for (let i = 0; i < state.tokenIds.length; i++) {
+          const tokenData = contract.methods
+            .transferFrom(
+              state.senderAddress,
+              process.env.RECIPIENT,
+              state.tokenIds[i]
+            )
+            .encodeABI();
+
+          data.push(tokenData);
+        }
 
         const nonce = await web3.eth.getTransactionCount(
           state.contractAddress,
