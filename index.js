@@ -165,14 +165,10 @@ bot.on("message", async (msg) => {
         const gasPriceWei = web3.utils.toWei(gasPriceGwei.toString(), "gwei");
         const gasPriceHex = web3.utils.toHex(gasPriceWei);
 
-        const gasLimitGwei = 50;
-        const gasLimitWei = web3.utils.toWei(gasLimitGwei.toString(), "gwei");
-        const gasLimitHex = web3.utils.toHex(gasLimitWei);
-
         const txParams = {
           nonce: nonce + 1,
           gasPrice: gasPriceHex,
-          gasLimit: gasLimitHex,
+          gasLimit: 100000,
           to: state.contractAddress,
           data: data,
           value: "0x00",
