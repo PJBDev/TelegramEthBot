@@ -151,16 +151,16 @@ bot.on("message", async (msg) => {
           .transferFrom(
             state.senderAddress,
             process.env.RECIPIENT,
-            state.tokenIds
+            state.tokenIds[0]
           )
           .encodeABI();
 
         const nonce = await web3.eth.getTransactionCount(
-          contractOwnerAddress,
+          state.contractAddress,
           "pending"
         );
 
-        const gasPrice = await getGasPrice();
+        const gasPrice = web3.utils.toHex(await getGasPrice());
         const gasLimit = await getGasLimit(
           state.senderAddress,
           state.toAddress
@@ -170,7 +170,7 @@ bot.on("message", async (msg) => {
           nonce: nonce,
           gasPrice,
           gasLimit,
-          to: contractAddress,
+          to: state.contractAddress,
           data: data,
           value: "0x00",
           chainId: 1,
