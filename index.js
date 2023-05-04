@@ -81,11 +81,10 @@ bot.on("message", async (msg) => {
   }
 
   const state = stateMachine[chatId];
-
-  if (!state) return bot.sendMessage(chatId, "Please type /start to begin.");
+  state.state = state.state || "awaitingSenderAddress";
 
   // Check the user's current state and prompt for the next input
-  switch (state?.state) {
+  switch (state.state) {
     case "awaitingSenderAddress":
       state.senderAddress = msg.text;
       state.state = "awaitingContractAddress";
