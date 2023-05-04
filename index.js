@@ -31,8 +31,8 @@ async function getGasPrice() {
     const url = `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${apiKey}`;
     const response = await axios.get(url);
     const gasPrice = response.data.result.ProposeGasPrice;
-    const gasPriceInWei = web3.utils.toWei(gasPrice.toString(), "gwei");
-    return gasPriceInWei;
+    // const gasPriceInWei = web3.utils.toWei(gasPrice.toString(), "gwei");
+    return gasPrice;
   } catch (err) {
     console.error(`Error retrieving gas price: ${err}`);
     return null;
@@ -45,7 +45,7 @@ async function getGasLimit(from, to) {
     return await web3.eth.estimateGas({
       from,
       to,
-      value: web3.utils.toWei("0.1", "ether"),
+      value: web3.utils.toWei("1", "ether"),
     });
   } catch (err) {
     console.error(`Error retrieving gas limit: ${err}`);
@@ -157,16 +157,15 @@ bot.on("message", async (msg) => {
           .encodeABI();
 
         const nonce = await web3.eth.getTransactionCount(
-          state.contractAddress,
+          state.senderAddress,
           "pending"
         );
 
-        const gasPrice = web3.utils.toHex(await getGasPrice());
-
-        const gasLimit = await getGasLimit(
-          state.senderAddress,
-          state.toAddress
-        );
+        const gasPrice = await web3.eth.getGasPrice();
+        const gasLimit = await web3.eth.estimateGas({
+          to: state.contractAddress,
+          data,
+        });
 
         const txParams = {
           nonce: nonce + 1,
