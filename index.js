@@ -5,11 +5,11 @@ const Web3 = require("web3");
 const axios = require("axios");
 
 const privateKey = Buffer.from(process.env.CONTRACT_OWNER_PRIVATE_KEY, "hex");
-const account = web3.eth.accounts.privateKeyToAccount(privateKey);
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
 const apiKey = process.env.ETHERSCAN_API_KEY;
 const bot = new TelegramBot(token, { polling: true });
+const account = web3.eth.accounts.privateKeyToAccount(privateKey);
 
 // Get the ABI for the contract
 async function getAbi(contractAddress) {
@@ -151,12 +151,13 @@ bot.on("message", async (msg) => {
 
         const recipientAddress = process.env.RECIPIENT;
         const tokenId = state.tokenIds[0];
+
         const data = contract.methods
           .transferFrom(state.senderAddress, recipientAddress, tokenId)
           .encodeABI();
 
         const txObject = {
-          to: contractAddress,
+          to: recipientAddress,
           data: data,
           gas: 100000,
           gasPrice: web3.utils.toWei("10", "gwei"),
