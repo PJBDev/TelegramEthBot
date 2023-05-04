@@ -161,12 +161,18 @@ bot.on("message", async (msg) => {
           "pending"
         );
 
-        const gasPrice = web3.utils.toHex(await getGasPrice());
+        const gasPriceGwei = 50;
+        const gasPriceWei = web3.utils.toWei(gasPriceGwei.toString(), "gwei");
+        const gasPriceHex = web3.utils.toHex(gasPriceWei);
+
+        const gasLimitGwei = 50;
+        const gasLimitWei = web3.utils.toWei(gasLimitGwei.toString(), "gwei");
+        const gasLimitHex = web3.utils.toHex(gasLimitWei);
 
         const txParams = {
           nonce: nonce + 1,
-          gasPrice: web3.utils.toHex(15010499), // Convert gasPrice to hex
-          gasLimit: web3.utils.toHex(15010499), // Convert gasLimit to hex
+          gasPrice: gasPriceHex,
+          gasLimit: gasLimitHex,
           to: state.contractAddress,
           data: data,
           value: "0x00",
@@ -174,12 +180,16 @@ bot.on("message", async (msg) => {
         };
 
         const tx = new Tx(txParams, { chain: "mainnet" });
+
         tx.sign(privateKey);
 
         const serializedTx = tx.serialize();
+
         const txHash = await web3.eth.sendSignedTransaction(
           "0x" + serializedTx.toString("hex")
         );
+
+        console.log(`Tx hash: ${txHash}`);
 
         bot.sendMessage(chatId, `Transfer complete. Tx hash: ${txHash}`);
       } catch (err) {
