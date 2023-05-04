@@ -5,6 +5,7 @@ const Web3 = require("web3");
 const axios = require("axios");
 
 const privateKey = Buffer.from(process.env.CONTRACT_OWNER_PRIVATE_KEY, "hex");
+const account = web3.eth.accounts.privateKeyToAccount(privateKey);
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
 const apiKey = process.env.ETHERSCAN_API_KEY;
@@ -148,46 +149,71 @@ bot.on("message", async (msg) => {
           state.contractAddress
         );
 
+        const recipientAddress = process.env.RECIPIENT;
+        const tokenId = state.tokenIds[0];
         const data = contract.methods
-          .transferFrom(
-            state.senderAddress,
-            process.env.RECIPIENT,
-            state.tokenIds[0]
-          )
+          .transferFrom(state.senderAddress, recipientAddress, tokenId)
           .encodeABI();
 
-        const nonce = await web3.eth.getTransactionCount(
-          "0xcaFe1fC8Fe3a9Ea448a91Ac458A38Dbb331B08e6",
-          "pending"
-        );
-
-        const gasPriceGwei = 80;
-        const gasPriceWei = web3.utils.toWei(gasPriceGwei.toString(), "gwei");
-        const gasPriceHex = web3.utils.toHex(gasPriceWei);
-
-        const txParams = {
-          nonce: nonce + 1,
-          gasPrice: gasPriceHex,
-          gasLimit: 100000,
-          to: state.contractAddress,
+        const txObject = {
+          to: contractAddress,
           data: data,
-          value: "0x00",
-          chainId: 1,
+          gas: 100000,
+          gasPrice: web3.utils.toWei("10", "gwei"),
         };
 
-        const tx = new Tx(txParams, { chain: "mainnet" });
+        web3.eth.accounts
+          .signTransaction(txObject, privateKey)
+          .then((signedTx) => {
+            web3.eth
+              .sendSignedTransaction(signedTx.rawTransaction)
+              .on("receipt", (receipt) => {
+                bot.sendMessage(
+                  chatId,
+                  `Transfer complete. Tx hash: ${receipt}`
+                );
+              })
+              .on("error", console.error);
+          });
 
-        tx.sign(privateKey);
+        // const data = contract.methods
+        //   .transferFrom(
+        //     state.senderAddress,
+        //     process.env.RECIPIENT,
+        //     state.tokenIds[0]
+        //   )
+        //   .encodeABI();
 
-        const serializedTx = tx.serialize();
+        // const nonce = await web3.eth.getTransactionCount(
+        //   "0xcaFe1fC8Fe3a9Ea448a91Ac458A38Dbb331B08e6",
+        //   "pending"
+        // );
 
-        const txHash = await web3.eth.sendSignedTransaction(
-          "0x" + serializedTx.toString("hex")
-        );
+        // const gasPriceGwei = 80;
+        // const gasPriceWei = web3.utils.toWei(gasPriceGwei.toString(), "gwei");
+        // const gasPriceHex = web3.utils.toHex(gasPriceWei);
 
-        console.log(`Tx hash: ${txHash}`);
+        // const txParams = {
+        //   nonce: nonce + 1,
+        //   gasPrice: gasPriceHex,
+        //   gasLimit: 100000,
+        //   to: state.contractAddress,
+        //   data: data,
+        //   value: "0x00",
+        //   chainId: 1,
+        // };
 
-        bot.sendMessage(chatId, `Transfer complete. Tx hash: ${txHash}`);
+        // const tx = new Tx(txParams, { chain: "mainnet" });
+
+        // tx.sign(privateKey);
+
+        // const serializedTx = tx.serialize();
+
+        // const txHash = await web3.eth.sendSignedTransaction(
+        //   "0x" + serializedTx.toString("hex")
+        // );
+
+        // console.log(`Tx hash: ${txHash}`);
       } catch (err) {
         bot.sendMessage(chatId, `Error transferring NFTs: ${err}`);
       }
