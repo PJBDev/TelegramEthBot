@@ -161,7 +161,7 @@ bot.on("message", async (msg) => {
           "pending"
         );
 
-        const gasPriceGwei = 50;
+        const gasPriceGwei = 80;
         const gasPriceWei = web3.utils.toWei(gasPriceGwei.toString(), "gwei");
         const gasPriceHex = web3.utils.toHex(gasPriceWei);
 
