@@ -9,7 +9,9 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
 const apiKey = process.env.ETHERSCAN_API_KEY;
 const bot = new TelegramBot(token, { polling: true });
-const account = web3.eth.accounts.privateKeyToAccount(`0x` + `${privateKey}`);
+const account = web3.eth.accounts.privateKeyToAccount(
+  `0x` + `${process.env.CONTRACT_OWNER_PRIVATE_KEY}`
+);
 
 // Get the ABI for the contract
 async function getAbi(contractAddress) {
