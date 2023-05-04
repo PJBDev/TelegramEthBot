@@ -45,7 +45,7 @@ async function getGasLimit(from, to) {
     return await web3.eth.estimateGas({
       from,
       to,
-      value: web3.utils.toWei("1", "ether"),
+      value: web3.utils.toWei("0.01", "ether"),
     });
   } catch (err) {
     console.error(`Error retrieving gas limit: ${err}`);
