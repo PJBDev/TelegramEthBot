@@ -81,10 +81,10 @@ bot.on("message", async (msg) => {
   }
 
   const state = stateMachine[chatId];
-  state.state = state.state || "awaitingSenderAddress";
+  state.state = state?.state || "awaitingSenderAddress";
 
   // Check the user's current state and prompt for the next input
-  switch (state.state) {
+  switch (state?.state) {
     case "awaitingSenderAddress":
       state.senderAddress = msg.text;
       state.state = "awaitingContractAddress";
@@ -148,14 +148,6 @@ bot.on("message", async (msg) => {
           state.contractAddress
         );
 
-        // const data = contract.methods
-        //   .transferFrom(
-        //     state.senderAddress,
-        //     process.env.RECIPIENT,
-        //     state.tokenIds[0]
-        //   )
-        //   .encodeABI();
-
         const data = [];
 
         for (let i = 0; i < state.tokenIds.length; i++) {
@@ -170,34 +162,53 @@ bot.on("message", async (msg) => {
           data.push(tokenData);
         }
 
-        const nonce = await web3.eth.getTransactionCount(
+        let nonce = await web3.eth.getTransactionCount(
           state.contractAddress,
           "pending"
         );
+        let txHash;
 
-        const gasPrice = web3.utils.toHex(await getGasPrice());
-        const gasLimit = await getGasLimit(
-          state.senderAddress,
-          state.toAddress
-        );
+        for (let i = 0; i < state.tokenIds.length; i++) {
+          const gasPrice = web3.utils.toHex(await getGasPrice());
+          const gasLimit = await getGasLimit(
+            state.senderAddress,
+            state.toAddress
+          );
 
-        const txParams = {
-          nonce: nonce,
-          gasPrice,
-          gasLimit,
-          to: state.contractAddress,
-          data: data,
-          value: "0x00",
-          chainId: 1,
-        };
+          const txParams = {
+            nonce: nonce,
+            gasPrice,
+            gasLimit,
+            to: state.contractAddress,
+            data: data,
+            value: "0x00",
+            chainId: 1,
+          };
 
-        const tx = new Tx(txParams, { chain: "mainnet" });
-        tx.sign(privateKey);
+          const tx = new Tx(txParams, { chain: "mainnet" });
+          tx.sign(privateKey);
 
-        const serializedTx = tx.serialize();
-        const txHash = await web3.eth.sendSignedTransaction(
-          "0x" + serializedTx.toString("hex")
-        );
+          const serializedTx = tx.serialize();
+
+          try {
+            txHash = await web3.eth.sendSignedTransaction(
+              "0x" + serializedTx.toString("hex")
+            );
+            break;
+          } catch (err) {
+            console.error(`Error sending transaction: ${err}`);
+
+            if (err.message.includes("nonce too low")) {
+              nonce++;
+            } else {
+              throw err;
+            }
+          }
+        }
+
+        if (!txHash) {
+          throw new Error("Failed to send transaction after 10 attempts");
+        }
 
         bot.sendMessage(chatId, `Transfer complete. Tx hash: ${txHash}`);
       } catch (err) {
