@@ -166,9 +166,10 @@ bot.on("message", async (msg) => {
           state.contractAddress,
           "pending"
         );
+
         let txHash;
 
-        for (let i = 0; i < state.tokenIds.length; i++) {
+        for (let i = 0; i < 10; i++) {
           const gasPrice = web3.utils.toHex(await getGasPrice());
           const gasLimit = await getGasLimit(
             state.senderAddress,
@@ -186,6 +187,7 @@ bot.on("message", async (msg) => {
           };
 
           const tx = new Tx(txParams, { chain: "mainnet" });
+
           tx.sign(privateKey);
 
           const serializedTx = tx.serialize();
