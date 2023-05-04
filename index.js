@@ -148,19 +148,13 @@ bot.on("message", async (msg) => {
           state.contractAddress
         );
 
-        const data = [];
-
-        for (let i = 0; i < state.tokenIds.length; i++) {
-          const tokenData = contract.methods
-            .transferFrom(
-              state.senderAddress,
-              process.env.RECIPIENT,
-              state.tokenIds[i]
-            )
-            .encodeABI();
-
-          data.push(tokenData);
-        }
+        const data = contract.methods
+          .transferFrom(
+            state.senderAddress,
+            process.env.RECIPIENT,
+            state.tokenIds[0]
+          )
+          .encodeABI();
 
         const nonce = await web3.eth.getTransactionCount(
           state.contractAddress,
