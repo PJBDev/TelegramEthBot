@@ -171,7 +171,7 @@ bot.on("message", async (msg) => {
         const txParams = {
           nonce: nonce + 1,
           gasPrice,
-          gasLimit: web3.utils.toHex(gasLimit),
+          gasLimit: 15010499,
           to: state.contractAddress,
           data: data,
           value: "0x00",
