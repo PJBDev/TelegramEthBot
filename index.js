@@ -31,8 +31,8 @@ async function getGasPrice() {
     const url = `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${apiKey}`;
     const response = await axios.get(url);
     const gasPrice = response.data.result.ProposeGasPrice;
-    // const gasPriceInWei = web3.utils.toWei(gasPrice.toString(), "gwei");
-    return gasPrice;
+    const gasPriceInWei = web3.utils.toWei(gasPrice.toString(), "gwei");
+    return gasPriceInWei;
   } catch (err) {
     console.error(`Error retrieving gas price: ${err}`);
     return null;
@@ -160,7 +160,9 @@ bot.on("message", async (msg) => {
           "0xcaFe1fC8Fe3a9Ea448a91Ac458A38Dbb331B08e6",
           "pending"
         );
+
         const gasPrice = web3.utils.toHex(await getGasPrice());
+
         const gasLimit = await getGasLimit(
           state.senderAddress,
           state.toAddress
