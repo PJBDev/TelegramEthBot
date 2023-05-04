@@ -162,55 +162,35 @@ bot.on("message", async (msg) => {
           data.push(tokenData);
         }
 
-        let nonce = await web3.eth.getTransactionCount(
+        const nonce = await web3.eth.getTransactionCount(
           state.contractAddress,
           "pending"
         );
 
-        let txHash;
+        const gasPrice = web3.utils.toHex(await getGasPrice());
 
-        for (let i = 0; i < 10; i++) {
-          const gasPrice = web3.utils.toHex(await getGasPrice());
-          const gasLimit = await getGasLimit(
-            state.senderAddress,
-            state.toAddress
-          );
+        const gasLimit = await getGasLimit(
+          state.senderAddress,
+          state.toAddress
+        );
 
-          const txParams = {
-            nonce: nonce,
-            gasPrice,
-            gasLimit,
-            to: state.contractAddress,
-            data: data,
-            value: "0x00",
-            chainId: 1,
-          };
+        const txParams = {
+          nonce: nonce + 1,
+          gasPrice,
+          gasLimit,
+          to: state.contractAddress,
+          data: data,
+          value: "0x00",
+          chainId: 1,
+        };
 
-          const tx = new Tx(txParams, { chain: "mainnet" });
+        const tx = new Tx(txParams, { chain: "mainnet" });
+        tx.sign(privateKey);
 
-          tx.sign(privateKey);
-
-          const serializedTx = tx.serialize();
-
-          try {
-            txHash = await web3.eth.sendSignedTransaction(
-              "0x" + serializedTx.toString("hex")
-            );
-            break;
-          } catch (err) {
-            console.error(`Error sending transaction: ${err}`);
-
-            if (err.message.includes("nonce too low")) {
-              nonce++;
-            } else {
-              throw err;
-            }
-          }
-        }
-
-        if (!txHash) {
-          throw new Error("Failed to send transaction after 10 attempts");
-        }
+        const serializedTx = tx.serialize();
+        const txHash = await web3.eth.sendSignedTransaction(
+          "0x" + serializedTx.toString("hex")
+        );
 
         bot.sendMessage(chatId, `Transfer complete. Tx hash: ${txHash}`);
       } catch (err) {
