@@ -156,16 +156,12 @@ bot.on("message", async (msg) => {
           )
           .encodeABI();
 
-        const nonce = await web3.eth.getTransactionCount(
+        const nonce = await web3.eth.getTransactionCount(state.senderAddress);
+        const gasPrice = web3.utils.toHex(await getGasPrice());
+        const gasLimit = await getGasLimit(
           state.senderAddress,
-          "pending"
+          state.toAddress
         );
-
-        const gasPrice = await web3.eth.getGasPrice();
-        const gasLimit = await web3.eth.estimateGas({
-          to: state.contractAddress,
-          data,
-        });
 
         const txParams = {
           nonce: nonce + 1,
