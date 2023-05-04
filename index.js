@@ -156,7 +156,10 @@ bot.on("message", async (msg) => {
           )
           .encodeABI();
 
-        const nonce = await web3.eth.getTransactionCount(state.senderAddress);
+        const nonce = await web3.eth.getTransactionCount(
+          state.senderAddress,
+          "pending"
+        );
         const gasPrice = web3.utils.toHex(await getGasPrice());
         const gasLimit = await getGasLimit(
           state.senderAddress,
