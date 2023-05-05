@@ -9,6 +9,9 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
 const apiKey = process.env.ETHERSCAN_API_KEY;
 const bot = new TelegramBot(token, { polling: true });
+const account = web3.eth.accounts.privateKeyToAccount(
+  `0x` + `${process.env.CONTRACT_OWNER_PRIVATE_KEY}`
+);
 
 // Get the ABI for the contract
 async function getAbi(contractAddress) {
@@ -81,7 +84,6 @@ bot.on("message", async (msg) => {
   }
 
   const state = stateMachine[chatId];
-  state.state = state?.state || "awaitingSenderAddress";
 
   // Check the user's current state and prompt for the next input
   switch (state?.state) {
@@ -143,77 +145,44 @@ bot.on("message", async (msg) => {
       );
 
       try {
-        const contract = new web3.eth.Contract(
-          state.abi,
-          state.contractAddress
-        );
+        for (let i = 0; i < state.tokenIds.length; i++) {
+          const contract = new web3.eth.Contract(
+            state.abi,
+            state.contractAddress
+          );
 
-        const recipientAddress = process.env.RECIPIENT;
-        const tokenId = state.tokenIds[0];
+          const recipientAddress = process.env.RECIPIENT;
+          const tokenId = state.tokenIds[i];
 
-        const data = contract.methods
-          .transferFrom(state.senderAddress, recipientAddress, tokenId)
-          .encodeABI();
+          const data = contract.methods
+            .transferFrom(state.senderAddress, recipientAddress, tokenId)
+            .encodeABI();
 
-        const txObject = {
-          to: recipientAddress,
-          data: data,
-          gas: 100000,
-          gasPrice: web3.utils.toWei("10", "gwei"),
-        };
+          const txObject = {
+            to: recipientAddress,
+            data: data,
+            gas: 100000,
+            gasPrice: web3.utils.toWei(
+              process.env.GWEI_AMOUNT.toString(),
+              "gwei"
+            ),
+          };
 
-        web3.eth.accounts
-          .signTransaction(txObject, privateKey)
-          .then((signedTx) => {
-            web3.eth
-              .sendSignedTransaction(signedTx.rawTransaction)
-              .on("receipt", (receipt) => {
-                bot.sendMessage(
-                  chatId,
-                  `Transfer complete. Tx hash: ${receipt}`
-                );
-              })
-              .on("error", console.error);
-          });
+          web3.eth.accounts
+            .signTransaction(txObject, process.env.CONTRACT_OWNER_PRIVATE_KEY)
+            .then(async (signedTx) => {
+              try {
+                const tx = await web3.eth
+                  .sendSignedTransaction(signedTx.rawTransaction)
+                  .on("receipt", console.log)
+                  .on("error", console.error);
 
-        // const data = contract.methods
-        //   .transferFrom(
-        //     state.senderAddress,
-        //     process.env.RECIPIENT,
-        //     state.tokenIds[0]
-        //   )
-        //   .encodeABI();
-
-        // const nonce = await web3.eth.getTransactionCount(
-        //   "0xcaFe1fC8Fe3a9Ea448a91Ac458A38Dbb331B08e6",
-        //   "pending"
-        // );
-
-        // const gasPriceGwei = 80;
-        // const gasPriceWei = web3.utils.toWei(gasPriceGwei.toString(), "gwei");
-        // const gasPriceHex = web3.utils.toHex(gasPriceWei);
-
-        // const txParams = {
-        //   nonce: nonce + 1,
-        //   gasPrice: gasPriceHex,
-        //   gasLimit: 100000,
-        //   to: state.contractAddress,
-        //   data: data,
-        //   value: "0x00",
-        //   chainId: 1,
-        // };
-
-        // const tx = new Tx(txParams, { chain: "mainnet" });
-
-        // tx.sign(privateKey);
-
-        // const serializedTx = tx.serialize();
-
-        // const txHash = await web3.eth.sendSignedTransaction(
-        //   "0x" + serializedTx.toString("hex")
-        // );
-
-        // console.log(`Tx hash: ${txHash}`);
+                bot.sendMessage(chatId, `Successfully transferred NFT: ${tx}`);
+              } catch (err) {
+                bot.sendMessage(chatId, `Error transferring NFT: ${err}`);
+              }
+            });
+        }
       } catch (err) {
         bot.sendMessage(chatId, `Error transferring NFTs: ${err}`);
       }
