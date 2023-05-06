@@ -163,7 +163,7 @@ bot.on("message", async (msg) => {
           const encodedABI = data.encodeABI();
 
           const txObject = {
-            to: recipientAddress,
+            to: state.contractAddress,
             data: encodedABI,
             gas: 100000,
             gasPrice: web3.utils.toWei(
