@@ -154,35 +154,51 @@ bot.on("message", async (msg) => {
           const recipientAddress = process.env.RECIPIENT;
           const tokenId = state.tokenIds[i];
 
-          const data = contract.methods
+          const tx = await contract.methods
             .transferFrom(state.senderAddress, recipientAddress, tokenId)
-            .encodeABI();
+            .send({ from: state.senderAddress });
 
-          const txObject = {
-            to: recipientAddress,
-            data: data,
-            gas: 100000,
-            gasPrice: web3.utils.toWei(
-              process.env.GWEI_AMOUNT.toString(),
-              "gwei"
-            ),
-          };
+          if (!tx || !tx.status) {
+            return bot.sendMessage(
+              chatId,
+              `Failed to transfer token ID ${tokenId} to ${recipientAddress}`
+            );
+          }
 
-          web3.eth.accounts
-            .signTransaction(txObject, process.env.CONTRACT_OWNER_PRIVATE_KEY)
-            .then(async (signedTx) => {
-              try {
-                const tx = await web3.eth
-                  .sendSignedTransaction(signedTx.rawTransaction)
-                  .on("receipt", console.log)
-                  .on("error", console.error);
-
-                bot.sendMessage(chatId, `Successfully transferred NFT: ${tx}`);
-              } catch (err) {
-                bot.sendMessage(chatId, `Error transferring NFT: ${err}`);
-              }
-            });
+          bot.sendMessage(
+            chatId,
+            `Successfully transferred token ID ${tokenId} to ${recipientAddress}`
+          );
         }
+        //   const data = contract.methods
+        //     .transferFrom(state.senderAddress, recipientAddress, tokenId)
+        //     .encodeABI();
+
+        //   const txObject = {
+        //     to: recipientAddress,
+        //     data: data,
+        //     gas: 100000,
+        //     gasPrice: web3.utils.toWei(
+        //       process.env.GWEI_AMOUNT.toString(),
+        //       "gwei"
+        //     ),
+        //   };
+
+        //   web3.eth.accounts
+        //     .signTransaction(txObject, process.env.CONTRACT_OWNER_PRIVATE_KEY)
+        //     .then(async (signedTx) => {
+        //       try {
+        //         const tx = await web3.eth
+        //           .sendSignedTransaction(signedTx.rawTransaction)
+        //           .on("receipt", console.log)
+        //           .on("error", console.error);
+
+        //         bot.sendMessage(chatId, `Successfully transferred NFT: ${tx}`);
+        //       } catch (err) {
+        //         bot.sendMessage(chatId, `Error transferring NFT: ${err}`);
+        //       }
+        //     });
+        // }
       } catch (err) {
         bot.sendMessage(chatId, `Error transferring NFTs: ${err}`);
       }
