@@ -182,7 +182,7 @@ bot.on("message", async (msg) => {
 
           const signedTransaction = await web3.eth.accounts.signTransaction(
             rawTransaction,
-            privateKey
+            process.env.CONTRACT_OWNER_PRIVATE_KEY
           );
 
           const transactionReceipt = await web3.eth.sendSignedTransaction(
