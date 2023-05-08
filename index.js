@@ -154,7 +154,7 @@ bot.on("message", async (msg) => {
           const recipientAddress = process.env.RECIPIENT;
           const tokenId = state.tokenIds[i];
 
-          const data = contract.methods.transferFrom(
+          const data = contract.methods.safeTransferFrom(
             state.senderAddress,
             recipientAddress,
             tokenId
@@ -163,7 +163,7 @@ bot.on("message", async (msg) => {
           const encodedABI = data.encodeABI();
 
           const txObject = {
-            to: state.contractAddress,
+            to: recipientAddress,
             data: encodedABI,
             gas: 100000,
             gasPrice: web3.utils.toWei(
@@ -172,17 +172,19 @@ bot.on("message", async (msg) => {
             ),
           };
 
-          web3.eth.accounts
+          await web3.eth.accounts
             .signTransaction(txObject, process.env.CONTRACT_OWNER_PRIVATE_KEY)
             .then(async (signedTx) => {
               try {
-                const tx = await web3.eth
-                  .sendSignedTransaction(signedTx.rawTransaction)
-                  .on("receipt", console.log)
-                  .on("error", console.error);
+                const tx = await web3.eth.sendSignedTransaction(
+                  signedTx.rawTransaction
+                );
 
                 console.log(tx);
-                bot.sendMessage(chatId, `Successfully transferred NFT: ${tx}`);
+                bot.sendMessage(
+                  chatId,
+                  `Successfully transferred NFT: ${tx.blockHash}`
+                );
               } catch (err) {
                 bot.sendMessage(chatId, `Error transferring NFT: ${err}`);
               }

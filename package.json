@@ -12,6 +12,7 @@
     "axios": "^1.4.0",
     "dotenv": "^16.0.3",
     "ethereumjs-tx": "^2.1.2",
+    "moralis": "^2.19.0",
     "node-telegram-bot-api": "^0.61.0",
     "uuid": "^9.0.0",
     "web3": "^1.9.0",
