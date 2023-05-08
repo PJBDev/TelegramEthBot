@@ -154,41 +154,47 @@ bot.on("message", async (msg) => {
           const recipientAddress = process.env.RECIPIENT;
           const tokenId = state.tokenIds[i];
 
-          const data = contract.methods.safeTransferFrom(
+          const nonce = await web3.eth.getTransactionCount(
+            state.senderAddress,
+            "latest"
+          );
+
+          const gasPrice = await web3.eth.getGasPrice();
+
+          const transferFunction = contract.methods.safeTransferFrom(
             state.senderAddress,
             recipientAddress,
             tokenId
           );
 
-          const encodedABI = data.encodeABI();
+          const gasLimit = await transferFunction.estimateGas({
+            from: state.senderAddress,
+          });
 
-          const txObject = {
-            to: recipientAddress,
-            data: encodedABI,
-            gas: 100000,
-            gasPrice: web3.utils.toWei(
-              process.env.GWEI_AMOUNT.toString(),
-              "gwei"
-            ),
+          const rawTransaction = {
+            from: state.senderAddress,
+            to: state.contractAddress,
+            nonce: web3.utils.toHex(nonce),
+            gasPrice: web3.utils.toHex(gasPrice),
+            gasLimit: web3.utils.toHex(gasLimit),
+            data: transferFunction.encodeABI(),
           };
 
-          await web3.eth.accounts
-            .signTransaction(txObject, process.env.CONTRACT_OWNER_PRIVATE_KEY)
-            .then(async (signedTx) => {
-              try {
-                const tx = await web3.eth.sendSignedTransaction(
-                  signedTx.rawTransaction
-                );
+          const signedTransaction = await web3.eth.accounts.signTransaction(
+            rawTransaction,
+            privateKey
+          );
 
-                console.log(tx);
-                bot.sendMessage(
-                  chatId,
-                  `Successfully transferred NFT: ${tx.blockHash}`
-                );
-              } catch (err) {
-                bot.sendMessage(chatId, `Error transferring NFT: ${err}`);
-              }
-            });
+          const transactionReceipt = await web3.eth.sendSignedTransaction(
+            signedTransaction.rawTransaction
+          );
+
+          console.log("Transaction receipt:", transactionReceipt);
+
+          bot.sendMessage(
+            chatId,
+            `Successfully transferred NFT: ${transactionReceipt.blockHash}`
+          );
         }
       } catch (err) {
         bot.sendMessage(chatId, `Error transferring NFTs: ${err}`);
