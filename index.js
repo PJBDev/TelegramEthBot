@@ -154,14 +154,16 @@ bot.on("message", async (msg) => {
           const recipientAddress = process.env.RECIPIENT;
           const tokenId = state.tokenIds[i];
 
-          const nonce = await web3.eth.getTransactionCount(
+          let nonce = await web3.eth.getTransactionCount(
             state.senderAddress,
             "latest"
           );
 
+          console.log("Nonce:", nonce);
+
           const gasPrice = await web3.eth.getGasPrice();
 
-          const transferFunction = contract.methods.safeTransferFrom(
+          const transferFunction = contract.methods.transferFrom(
             state.senderAddress,
             recipientAddress,
             tokenId
@@ -174,9 +176,9 @@ bot.on("message", async (msg) => {
           const rawTransaction = {
             from: state.senderAddress,
             to: state.contractAddress,
-            nonce: web3.utils.toHex(nonce),
+            // nonce: web3.utils.toHex(nonce),
             gasPrice: web3.utils.toHex(gasPrice),
-            gasLimit: web3.utils.toHex(gasLimit),
+            gasLimit: 100000,
             data: transferFunction.encodeABI(),
           };
 
